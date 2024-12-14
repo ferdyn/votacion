@@ -1,11 +1,12 @@
 {
+  "scripts": {
+    "start": "react-scripts start"
+  },
   "dependencies": {
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    // other dependencies here...
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    // dev dependencies here...
+    "react-scripts": "^5.0.1"
   }
 }
-
