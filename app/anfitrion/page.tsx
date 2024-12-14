@@ -168,7 +168,7 @@ export default function AnfitrionPage() {
         const { error: resultadosError } = await supabase
           .from('resultados_votacion')
           .delete()
-          .in('departamentoId', departamentoIds)
+          .in('departamento_id', departamentoIds)
         if (resultadosError) throw resultadosError
       }
 
@@ -215,17 +215,28 @@ export default function AnfitrionPage() {
         .eq('id', grupoId)
       if (activarError) throw activarError
 
-      await fetchGruposVotacion()
+      // Activar los códigos de acceso asociados al grupo
+      const { error: codigosError } = await supabase
+        .from('codigos_acceso')
+        .update({ estado: 'activo' })
+        .eq('grupo_id', grupoId)
+        .eq('estado', 'pendiente')
+      if (codigosError) throw codigosError
+
+      await Promise.all([
+        fetchGruposVotacion(),
+        fetchCodigosAcceso()
+      ])
 
       toast({
         title: "Éxito",
-        description: "Grupo activado correctamente.",
+        description: "Grupo y códigos de acceso activados correctamente.",
       })
     } catch (error) {
       console.error('Error activating grupo:', error)
       toast({
         title: "Error",
-        description: "No se pudo activar el grupo. Por favor, intente de nuevo.",
+        description: "No se pudo activar el grupo y los códigos. Por favor, intente de nuevo.",
         variant: "destructive",
       })
     }
@@ -267,7 +278,7 @@ export default function AnfitrionPage() {
     }
   }
 
-  const handleActivarVotacion = async (grupoId: string, departamentoId: string) => {
+  const handleActivarVotacion = async (grupoId: string, departamento_id: string) => {
     try {
       const grupo = gruposVotacion.find(g => g.id === grupoId)
       if (!grupo) throw new Error('Grupo no encontrado')
@@ -275,7 +286,7 @@ export default function AnfitrionPage() {
       // Desactivar todos los departamentos y activar solo el seleccionado
       const departamentosActualizados = grupo.departamentos.map(d => ({
         ...d,
-        activo: d.id === departamentoId
+        activo: d.id === departamento_id
       }))
 
       const { error } = await supabase
@@ -300,14 +311,14 @@ export default function AnfitrionPage() {
     }
   }
 
-  const handleFinalizarVotacion = async (grupoId: string, departamentoId: string) => {
+  const handleFinalizarVotacion = async (grupoId: string, departamento_id: string) => {
     try {
       const grupo = gruposVotacion.find(g => g.id === grupoId)
       if (!grupo) throw new Error('Grupo no encontrado')
 
       // Desactivar el departamento seleccionado
       const departamentosActualizados = grupo.departamentos.map(d => 
-        d.id === departamentoId ? { ...d, activo: false } : d
+        d.id === departamento_id ? { ...d, activo: false } : d
       )
 
       const { error } = await supabase

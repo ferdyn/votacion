@@ -157,33 +157,23 @@ export default function VotacionPage({ params }: PageProps) {
 
     setCargando(true)
     try {
-      // Verificar nuevamente que el código sigue siendo válido
-      const { data: codigoData, error: codigoError } = await supabase
-        .from('codigos_acceso')
-        .select('*')
-        .eq('codigo', codigo)
-        .eq('estado', 'activo')
-        .single()
-
-      if (codigoError || !codigoData) {
-        throw new Error('El código ya no es válido o ha sido utilizado')
-      }
-
-      // Registrar el voto
-      const { error: votoError } = await supabase.rpc('incrementar_voto', {
-        p_departamento: departamentoActivo.id,
-        p_candidato: candidatoSeleccionado
+      const response = await fetch('/api/registrar-voto', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          departamentoId: departamentoActivo.id,
+          candidatoId: candidatoSeleccionado,
+          codigo: codigo
+        }),
       })
 
-      if (votoError) throw votoError
+      const data = await response.json()
 
-      // Marcar el código como utilizado
-      const { error: updateError } = await supabase
-        .from('codigos_acceso')
-        .update({ estado: 'utilizado' })
-        .eq('codigo', codigo)
-
-      if (updateError) throw updateError
+      if (!response.ok) {
+        throw new Error(data.message || 'Error al registrar el voto')
+      }
 
       setMensaje('Su voto ha sido registrado correctamente. Gracias por su participación.')
       setDepartamentoActivo(null)
